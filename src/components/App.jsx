@@ -10,10 +10,10 @@ import MyLoader from './Loader/Loader';
 import Button from './Button/Button';
 
 function App() {
-  
+
   const [imageName, setImageName] = useState('');
   const [images, setImages] = useState([]);
-  const [error, setError] = useState(null);
+  const [, setError] = useState(null);
   const [page, setPage] = useState(1);
   const [totalPages, setTotalPages] = useState(0);
   const [showModal, setShowModal] = useState(false);
