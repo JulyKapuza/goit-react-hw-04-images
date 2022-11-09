@@ -1,114 +1,100 @@
-import { Component } from 'react';
+import { useState, useEffect } from 'react';
 import { ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 import Searchbar from './Searchbar/Searchbar';
 import ImageGallery from './ImageGallery/ImageGallery';
-import imageAPI from '../components/services/api';
+import api from '../components/services/api';
 import { toast } from 'react-toastify';
 import Modal from 'components/Modal/Modal';
 import MyLoader from './Loader/Loader';
-import Button from 'components/Button/Button';
+import Button from './Button/Button';
 
-class App extends Component {
-  state = {
-    imageName: '',
-    images: [],
-    error: null,
-    page: 1,
-    totalPages: 0,
-    showModal: false,
-    largeImage: '',
-    isLoading: false,
-  };
+function App() {
+  const [imageName, setImageName] = useState('');
+  const [images, setImages] = useState([]);
+  const [error, setError] = useState(null);
+  const [page, setPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(0);
+  const [showModal, setShowModal] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
+  const [largeImage, setLargeImage] = useState('');
 
-  async componentDidUpdate(prevProps, prevState) {
-    const prevName = prevState.imageName;
-    const nextName = this.state.imageName;
-    const { page } = this.state;
-
-    if (prevName !== nextName || prevState.page !== page) {
-      this.setState({ isLoading: true });
-
-      const response = await imageAPI
-        .fetchImages(nextName, page)
-        .catch(error => this.setState({ error }));
-
-      if (response.data.totalHits === 0) {
-        toast('🦄 Enter correct request!');
-        this.setState({ images: [] });
-        return;
-      }
-
-      response.data.hits.forEach(
-        ({ id, webformatURL, largeImageURL, tags }) => {
-          return this.setState(({ images }) => ({
-            images: [...images, { id, webformatURL, largeImageURL, tags }],
-            totalPages: Math.ceil(response.data.totalHits / 12),
-            isLoading: false,
-          }));
-        }
-      );
-
-      // return this.setState(({ images }) => ({
-      //   images: [...images, ...response.data.hits],
-      //   totalPages: Math.ceil(response.data.totalHits / 12),
-      //   isLoading: false,
-      // }));
+  useEffect(() => {
+    if (imageName === '') {
+      return;
     }
-  }
 
-  onClick = photo => {
+    try {
+      setIsLoading(true);
+
+      const response = api.fetchImages(imageName, page);
+      response.then(images => {
+        if (images.data.totalHits === 0) {
+          toast('🦄 Enter correct request!');
+          setImages([]);
+          return;
+        }
+
+        images.data.hits.forEach(
+          ({ id, webformatURL, largeImageURL, tags }) => {
+            setImages(state => [
+              ...state,
+              { id, webformatURL, largeImageURL, tags },
+            ]);
+            setTotalPages(Math.ceil(images.data.totalHits / 12));
+            setIsLoading(false);
+          }
+        );
+      });
+    } catch (error) {
+      setError(error);
+      setIsLoading(false);
+    }
+  }, [imageName, page]);
+
+  const onClick = photo => {
     const largeImage = photo;
-    this.setState({
-      largeImage,
-      showModal: true,
-    });
+    setLargeImage(largeImage);
+    setShowModal(true);
   };
 
-  onLoadMore = () => {
-    this.setState(prevState => ({
-      page: prevState.page + 1,
-    }));
+  const onLoadMore = () => {
+    setPage(state => state + 1);
   };
 
-  toggleModal = () => {
-    this.setState(state => ({
-      showModal: !state.showModal,
-    }));
+  const toggleModal = () => {
+    setShowModal(state => !state);
   };
 
-  handleFormSubmit = imageName => {
-    this.setState({ imageName, page: 1, images: [] });
+  const handleFormSubmit = imageName => {
+    setImageName(imageName);
+    setPage(1);
+    setImages([]);
   };
 
-  render() {
-    const { images, totalPages, page, isLoading, largeImage, showModal } =
-      this.state;
-    return (
-      <div className="container">
-        {<Searchbar onSubmit={this.handleFormSubmit} />}
+  return (
+    <div className="container">
+      {<Searchbar onSubmit={handleFormSubmit} />}
 
-        {images.length > 0 && (
-          <ImageGallery
-            images={images}
-            onClick={this.onClick}
-            totalPages={totalPages}
-            page={page}
-            onLoadMore={this.onLoadMore}
-            isLoading={isLoading}
-          />
-        )}
+      {
+        <ImageGallery
+          images={images}
+          onClick={onClick}
+          totalPages={totalPages}
+          page={page}
+          onLoadMore={onLoadMore}
+          isLoading={isLoading}
+        />
+      }
+      {isLoading && <MyLoader />}
+      {images.length >= 12 && totalPages > page && (
+        <Button onLoadMore={onLoadMore} />
+      )}
 
-        {isLoading && <MyLoader />}
-        {images.length >= 12 && totalPages > page && (
-          <Button onLoadMore={this.onLoadMore} />
-        )}
-
-        {showModal && <Modal src={largeImage} onClose={this.toggleModal} />}
-        <ToastContainer />
-      </div>
-    );
-  }
+      {showModal && <Modal src={largeImage} onClose={toggleModal} />}
+      <ToastContainer />
+    </div>
+  );
 }
 
 export default App;

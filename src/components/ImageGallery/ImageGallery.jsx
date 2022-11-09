@@ -2,7 +2,7 @@ import PropTypes from 'prop-types';
 import ImageGalleryItem from 'components/ImageGalleryItem/ImageGalleryItem';
 import css from './ImageGallery.module.css';
 
-const ImageGallery = ({ images, onClick }) => {
+export default function ImageGallery ({ images, onClick }) {
   return (
     <div className={css.App}>
       <ul className={css.ImageGallery}>
@@ -20,7 +20,6 @@ const ImageGallery = ({ images, onClick }) => {
   );
 };
 
-export default ImageGallery;
 
 ImageGallery.propTypes = {
   images: PropTypes.arrayOf(
